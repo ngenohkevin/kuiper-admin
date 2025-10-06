@@ -1,0 +1,328 @@
+/* Custom styles to complement Tailwind CSS */
+
+/* Specific fix for duplicate sidebars */
+#main-sidebar ~ .lg\:fixed.lg\:inset-y-0.lg\:z-50.lg\:flex.lg\:w-72.lg\:flex-col {
+  display: none !important;
+}
+
+/* Mobile responsiveness improvements */
+@media (max-width: 1023px) {
+  /* Ensure main content has proper padding */
+  main {
+    padding-left: 0 !important;
+  }
+  
+  /* Improve mobile sidebar styling */
+  .fixed.inset-0.flex > div {
+    width: 85% !important;
+    max-width: 280px !important;
+  }
+  
+  /* Add margin to bottom to prevent content from being hidden behind fixed elements */
+  body {
+    position: relative !important;
+  }
+}
+
+/* Hide any additional hamburger menus or footers in mobile view */
+.footer-nav, 
+.bottom-hamburger,
+.mobile-duplicate-nav {
+  display: none !important;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme variables */
+:root {
+  /* Dark mode colors applied directly to root */
+  --color-primary: #c084fc; /* Purple-400 for better contrast in dark mode */
+  --color-primary-hover: #a855f7; /* Purple-600 */
+  --color-background: #111827; /* Gray-900 */
+  --color-card-bg: #1f2937; /* Gray-800 */
+  --color-text-primary: #f9fafb; /* Gray-50 */
+  --color-text-secondary: #d1d5db; /* Gray-300 */
+  --color-border: #374151; /* Gray-700 */
+  --color-toast-bg: #1f2937; /* Gray-800 */
+  --color-toast-shadow: rgba(0, 0, 0, 0.5);
+  --color-table-header-bg: #1e293b; /* Slate-800 */
+  --color-table-bg: #1f2937; /* Gray-800 */
+  --color-active-nav-bg: rgba(192, 132, 252, 0.15); /* Purple-400 at 15% opacity */
+}
+
+/* Apply theme variables */
+html {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  transition: all 0.3s ease;
+}
+
+/* Custom styling for rating stars */
+.rating-stars {
+  display: flex;
+  gap: 4px;
+}
+
+.rating-stars label svg {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rating-stars label:hover svg,
+.rating-stars label:hover ~ label svg {
+  color: #FBBF24;
+}
+
+/* HTMX indicator styles */
+.htmx-indicator {
+  opacity: 0;
+  transition: opacity 200ms ease-in;
+}
+.htmx-request .htmx-indicator {
+  opacity: 1;
+}
+.htmx-request.htmx-indicator {
+  opacity: 1;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Toasts for notifications */
+.toast {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  padding: 1rem;
+  background-color: var(--color-toast-bg);
+  color: var(--color-text-primary);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px var(--color-toast-shadow), 0 4px 6px -2px var(--color-toast-shadow);
+  z-index: 50;
+  max-width: 24rem;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-success {
+  border-left: 4px solid #10B981;
+}
+
+.toast-error {
+  border-left: 4px solid #EF4444;
+}
+
+.toast-info {
+  border-left: 4px solid #3B82F6;
+}
+
+/* Custom components with dark mode support */
+.card {
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Custom button styles */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* Custom form elements */
+input, select, textarea {
+  border-color: var(--color-border);
+  background-color: var(--color-card-bg);
+  color: var(--color-text-primary);
+}
+
+/* Modern scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563; /* gray-600 */
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #374151; /* gray-700 */
+}
+
+/* Animation for page transitions */
+.page-transition {
+  transition: opacity 0.2s ease;
+}
+
+.page-transition.fade-out {
+  opacity: 0;
+}
+
+/* Custom table styles */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+table th {
+  background-color: var(--color-table-header-bg);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  color: var(--color-text-primary);
+}
+
+table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+/* Table background */
+table tbody {
+  background-color: var(--color-table-bg);
+}
+
+/* Table rows */
+table tbody tr {
+  background-color: var(--color-card-bg);
+}
+
+/* Improved focus styles for accessibility */
+:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Hide outline for mouse users, but keep it for keyboard users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Active navigation styling */
+.nav-link.active {
+  background-color: var(--color-active-nav-bg);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Heading text */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-text-primary);
+}
+
+/* Paragraph text */
+p {
+  color: var(--color-text-secondary);
+}
+
+/* Form labels */
+label {
+  color: var(--color-text-primary);
+}
+
+/* Table cells */
+td {
+  color: var(--color-text-secondary);
+}
+
+/* Links */
+a:not(.nav-link) {
+  color: var(--color-primary);
+}
+
+/* Buttons with white background */
+.bg-white {
+  background-color: var(--color-card-bg) !important;
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+/* Card shadows */
+.shadow, .shadow-sm {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Rings */
+.ring-1 {
+  --tw-ring-color: var(--color-border);
+}
+
+/* Borders */
+.border-gray-100, 
+.border-gray-200, 
+.border-gray-300 {
+  border-color: var(--color-border);
+}
+
+/* Gray text colors - remap to our dark theme colors */
+.text-gray-400,
+.text-gray-500,
+.text-gray-600,
+.text-gray-700,
+.text-gray-800,
+.text-gray-900 {
+  color: var(--color-text-secondary);
+}
+
+/* Fix for background */
+.bg-gray-50 {
+  background-color: var(--color-background);
+}
+
+/* Override table background colors */
+.bg-gray-50 {
+  background-color: var(--color-table-header-bg) !important;
+}
+
+.bg-white {
+  background-color: var(--color-card-bg) !important;
+}
+
+/* Fix for hover effects */
+.hover\:bg-gray-50:hover {
+  background-color: #2d3748 !important; /* gray-700 */
+}
+
+/* Fix for divide colors */
+.divide-gray-200, .divide-gray-300 {
+  --tw-divide-opacity: 1;
+  border-color: var(--color-border);
+}

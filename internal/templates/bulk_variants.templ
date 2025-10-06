@@ -1,0 +1,143 @@
+package templates
+
+import (
+	"github.com/ngenohkevin/kuiper_admin/internal/models"
+)
+
+templ BulkVariantCreate(products []models.Product, selectedProductID string) {
+	@Layout("Bulk Add Variants") {
+		<div class="sm:flex sm:items-center">
+			<div class="sm:flex-auto">
+				<h1 class="text-3xl font-semibold leading-tight text-gray-900 dark:text-gray-100">Bulk Add Variants</h1>
+				<p class="mt-2 text-sm text-gray-700 dark:text-gray-300">
+					Create multiple variants at once for your product
+				</p>
+			</div>
+			<div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+				<a
+					href="/variants"
+					hx-boost="true"
+					class="block rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-center text-sm font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+				>
+					Back to Variants
+				</a>
+			</div>
+		</div>
+		
+		<div class="mt-8" x-data="{ 
+            variants: [{name: '5 grams', price: '', stock: ''}],
+            selectedProduct: '',
+            init() {
+                this.selectedProduct = this.$refs.productSelect.value;
+                if (this.selectedProduct === '') {
+                    this.selectedProduct = this.$refs.productSelect.options[0].value;
+                }
+            }
+        }">
+			<form 
+				hx-post="/variants/bulk-store"
+				hx-target="body"
+				hx-swap="outerHTML"
+				class="space-y-6"
+			>
+				<div class="max-w-lg">
+					<label for="product_id" class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+						Product <span class="text-red-500">*</span>
+					</label>
+					<div class="mt-2">
+						<select
+							id="product_id"
+							name="product_id"
+							required
+							x-ref="productSelect"
+							x-model="selectedProduct"
+							class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6"
+						>
+							<option value="">Select a product</option>
+							for _, product := range products {
+								<option 
+									value={ product.ID }
+									if product.ID == selectedProductID {
+										selected
+									}
+								>
+									{ product.Name }
+								</option>
+							}
+						</select>
+					</div>
+				</div>
+				
+				<div class="border p-4 rounded-md bg-gray-50 dark:bg-gray-800">
+					<h2 class="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Weight Templates</h2>
+					<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+						<button type="button" class="px-3 py-2 bg-blue-100 dark:bg-blue-900 rounded-md text-blue-800 dark:text-blue-200"
+							x-on:click.prevent="variants = [{name: '5 grams', price: '', stock: ''}, {name: '15 grams', price: '', stock: ''}, {name: '30 grams', price: '', stock: ''}]">
+							Small Weights (5g, 15g, 30g)
+						</button>
+						<button type="button" class="px-3 py-2 bg-blue-100 dark:bg-blue-900 rounded-md text-blue-800 dark:text-blue-200"
+							x-on:click.prevent="variants = [{name: '5 grams', price: '', stock: ''}, {name: '15 grams', price: '', stock: ''}, {name: '25 grams', price: '', stock: ''}, {name: '35 grams', price: '', stock: ''}]">
+							Standard Weights (5g, 15g, 25g, 35g)
+						</button>
+						<button type="button" class="px-3 py-2 bg-blue-100 dark:bg-blue-900 rounded-md text-blue-800 dark:text-blue-200"
+							x-on:click.prevent="variants = [{name: '10 grams', price: '', stock: ''}, {name: '20 grams', price: '', stock: ''}, {name: '30 grams', price: '', stock: ''}, {name: '40 grams', price: '', stock: ''}, {name: '50 grams', price: '', stock: ''}]">
+							10g Increments
+						</button>
+						<button type="button" class="px-3 py-2 bg-blue-100 dark:bg-blue-900 rounded-md text-blue-800 dark:text-blue-200"
+							x-on:click.prevent="variants = [{name: '25 grams', price: '', stock: ''}, {name: '50 grams', price: '', stock: ''}, {name: '75 grams', price: '', stock: ''}, {name: '100 grams', price: '', stock: ''}]">
+							25g Increments
+						</button>
+					</div>
+				</div>
+				
+				<div class="space-y-4">
+					<template x-for="(variant, index) in variants" :key="index">
+						<div class="border p-4 rounded-md bg-white dark:bg-gray-800">
+							<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+								<div>
+									<label class="block text-sm font-medium text-gray-900 dark:text-gray-100">Name</label>
+									<input type="text" x-bind:name="'variants[' + index + '][name]'" x-model="variant.name"
+										class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6" />
+								</div>
+								<div>
+									<label class="block text-sm font-medium text-gray-900 dark:text-gray-100">Price ($)</label>
+									<input type="number" step="0.01" min="0" x-bind:name="'variants[' + index + '][price]'" x-model="variant.price"
+										class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6" />
+								</div>
+								<div>
+									<label class="block text-sm font-medium text-gray-900 dark:text-gray-100">Stock</label>
+									<input type="number" min="0" x-bind:name="'variants[' + index + '][stock]'" x-model="variant.stock"
+										class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6" />
+								</div>
+							</div>
+							<div class="mt-2">
+								<button type="button" x-on:click.prevent="variants.splice(index, 1)"
+									class="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
+									Remove
+								</button>
+							</div>
+						</div>
+					</template>
+					
+					<div>
+						<button type="button" x-on:click.prevent="variants.push({name: (variants.length * 5 + 5) + ' grams', price: '', stock: ''})"
+							class="text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md px-3 py-2 text-gray-800 dark:text-gray-200">
+							+ Add Another Variant
+						</button>
+					</div>
+				</div>
+				
+				<div class="pt-5">
+					<div class="flex justify-end">
+						<button type="submit"
+							class="ml-3 inline-flex justify-center rounded-md bg-purple-600 py-2 px-4 text-sm font-semibold text-white shadow-sm hover:bg-purple-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500"
+							x-bind:disabled="selectedProduct === '' || variants.length === 0"
+							x-bind:class="{'opacity-50 cursor-not-allowed': selectedProduct === '' || variants.length === 0}">
+							Create Variants
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	}
+}

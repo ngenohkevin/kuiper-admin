@@ -1,0 +1,23 @@
+services:
+  ganymede-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kuiper_admin
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DATABASE_URL=${DATABASE_URL}
+      - PORT=${PORT}
+    networks:
+      - ganymede-network
+
+networks:
+  ganymede-network:
+    driver: bridge

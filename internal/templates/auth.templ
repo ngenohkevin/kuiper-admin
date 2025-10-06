@@ -1,0 +1,90 @@
+package templates
+
+templ Login(errorMsg string) {
+    <!DOCTYPE html>
+    <html lang="en" class="dark h-full">
+        <head>
+            <meta charset="UTF-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+            <title>Login - Ganymede Admin</title>
+            <link rel="stylesheet" href="/static/css/styles.css"/>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <script>
+                tailwind.config = {
+                    darkMode: 'class',
+                    theme: {
+                        extend: {
+                            colors: {
+                                primary: 'var(--color-primary)',
+                                'primary-hover': 'var(--color-primary-hover)',
+                                background: 'var(--color-background)',
+                                'card-bg': 'var(--color-card-bg)',
+                            }
+                        }
+                    }
+                }
+            </script>
+        </head>
+        <body class="h-full bg-background flex flex-col justify-center items-center px-6 transition-colors duration-200">
+            <div class="mx-auto w-full max-w-sm">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-primary">Ganymede Admin</h1>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Sign in to access your admin dashboard</p>
+                </div>
+
+                <div class="bg-white dark:bg-card-bg shadow-md rounded-lg px-8 pt-6 pb-8 mb-4 transition-colors duration-200">
+                    if errorMsg != "" {
+                        <div class="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-sm rounded">
+                            { errorMsg }
+                        </div>
+                    }
+
+                    <form action="/login" method="POST">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" for="username">
+                                Username
+                            </label>
+                            <input 
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-white dark:bg-gray-700 dark:border-gray-600 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-purple-600"
+                                id="username" 
+                                name="username" 
+                                type="text" 
+                                placeholder="Username"
+                                required
+                            />
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" for="password">
+                                Password
+                            </label>
+                            <input 
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-white dark:bg-gray-700 dark:border-gray-600 mb-3 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-purple-600"
+                                id="password" 
+                                name="password" 
+                                type="password" 
+                                placeholder="******************"
+                                required
+                            />
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <button 
+                                class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200" 
+                                type="submit"
+                            >
+                                Sign In
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="text-center">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        &copy; 2025 Ganymede Admin. All rights reserved.
+                    </p>
+                </div>
+            </div>
+        </body>
+    </html>
+}

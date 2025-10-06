@@ -1,0 +1,647 @@
+package templates
+
+import (
+	"fmt"
+	"strconv"
+	"github.com/ngenohkevin/kuiper_admin/internal/models"
+)
+
+// Modern product form
+templ ModernProductForm(product *models.Product, categories []models.Category, isEdit bool) {
+	@Layout(getProductFormTitle(isEdit)) {
+		<div class="bg-gray-900 text-white min-h-screen">
+			<div class="max-w-4xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
+				<nav class="flex mb-8" aria-label="Breadcrumb">
+					<ol class="flex items-center space-x-2">
+						<li>
+							<a href="/products" class="text-gray-400 hover:text-gray-300">Products</a>
+						</li>
+						<li class="flex items-center">
+							<svg class="h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+							</svg>
+							<span class="ml-2 text-gray-300 font-medium">
+								if isEdit {
+									Edit Product
+									if product != nil {
+										: { product.Name }
+									}
+								} else {
+									New Product
+								}
+							</span>
+						</li>
+					</ol>
+				</nav>
+				
+				<div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
+					<div class="p-4 sm:p-6 border-b border-gray-700">
+						<h1 class="text-2xl font-bold text-indigo-400">
+							if isEdit {
+								Edit Product
+								if product != nil {
+									: { product.Name }
+								}
+							} else {
+								Create New Product
+							}
+						</h1>
+						<p class="text-gray-400 mt-1">
+							if isEdit {
+								Update the details for this product
+							} else {
+								Fill in the details to create a new product
+							}
+						</p>
+					</div>
+					
+					<div class="p-4 sm:p-6">
+						<form
+							if isEdit && product != nil {
+								hx-put={ "/products/" + product.ID }
+								hx-push-url="true"
+								hx-target="body"
+								hx-swap="outerHTML"
+							} else {
+								hx-post="/products"
+								hx-push-url="true"
+								hx-target="body"
+								hx-swap="outerHTML"
+							}
+							class="space-y-6"
+							x-data="{
+								variantsEnabled: false,
+								variantsCollapsed: true,
+								variants: [],
+								
+								init() {
+									// Initialize variantsEnabled based on the checkbox
+									this.variantsEnabled = document.getElementById('enable_variants').checked;
+									
+									// Check if we're in edit mode with variants
+									if (document.getElementById('enable_variants').checked) {
+										this.variantsCollapsed = false;
+										
+										// Load existing variants if any
+										if (document.querySelectorAll('.variant-data').length > 0) {
+											const variantElements = document.querySelectorAll('.variant-data');
+											this.variants = Array.from(variantElements).map(el => ({
+												id: el.getAttribute('data-id'),
+												name: el.getAttribute('data-name'),
+												price: el.getAttribute('data-price'),
+												stock: el.getAttribute('data-stock'),
+												isAvailable: el.getAttribute('data-available') === 'true',
+												isExisting: true  // Mark as existing variant
+											}));
+										}
+									}
+								},
+								
+								addVariant() {
+									const weight = ((this.variants.filter(v => !v.isExisting).length) * 5 + 5);
+									this.variants.push({
+										name: weight + ' grams',
+										price: '',
+										stock: '0',
+										isExisting: false  // Mark as new variant
+									});
+								},
+								
+								removeVariant(index) {
+									// Only allow removal of new variants during edit
+									const variant = this.variants[index];
+									if (!variant.isExisting) {
+										this.variants.splice(index, 1);
+									} else {
+										alert('To remove existing variants, use the main product view page.');
+									}
+								},
+								
+								toggleVariantsSection() {
+									this.variantsCollapsed = !this.variantsCollapsed;
+								}
+							}"
+						>
+							<!-- Basic Information Section -->
+							<div>
+								<h2 class="text-lg font-semibold text-indigo-300 mb-4">Basic Information</h2>
+								<div class="grid grid-cols-1 gap-6 sm:grid-cols-6">
+									<div class="sm:col-span-4">
+										<label for="name" class="block text-sm font-medium text-gray-300">
+											Name <span class="text-red-500">*</span>
+										</label>
+										<div class="mt-1">
+											<input
+												type="text"
+												id="name"
+												name="name"
+												if product != nil {
+													value={ product.Name }
+												}
+												required
+												class="block w-full rounded-md border-0 py-1.5 bg-gray-700 text-white shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+											/>
+										</div>
+									</div>
+									
+									<div class="sm:col-span-2">
+										<label for="slug" class="block text-sm font-medium text-gray-300">
+											Slug <span class="text-red-500">*</span>
+										</label>
+										<div class="mt-1 relative">
+											<input
+												type="text"
+												id="slug"
+												name="slug"
+												if product != nil {
+													value={ product.Slug }
+												}
+												required
+												placeholder="unique-identifier"
+												class="block w-full rounded-md border-0 py-1.5 pr-20 bg-gray-700 text-white shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+											/>
+											<button
+												type="button"
+												id="generate-slug-btn"
+												class="absolute inset-y-0 right-0 flex items-center px-3 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-gray-600 hover:bg-gray-500 rounded-r-md border-l border-gray-500"
+												onclick="window.generateSlug()"
+											>
+												Generate
+											</button>
+										</div>
+										<div class="mt-1 flex items-center justify-between">
+											<p class="text-xs text-gray-400">Unique identifier for URLs</p>
+											<label class="flex items-center text-xs text-gray-400">
+												<input
+													type="checkbox"
+													id="auto-slug"
+													class="h-3 w-3 rounded bg-gray-700 border-gray-600 text-indigo-600 focus:ring-indigo-500 mr-1"
+													checked
+												/>
+												Auto-generate
+											</label>
+										</div>
+									</div>
+									
+									<div class="sm:col-span-3">
+										<label for="category_id" class="block text-sm font-medium text-gray-300">
+											Category
+										</label>
+										<div class="mt-1">
+											<select
+												id="category_id"
+												name="category_id"
+												class="block w-full rounded-md border-0 py-1.5 bg-gray-700 text-white shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+											>
+												<option value="">No Category</option>
+												for _, category := range categories {
+													<option 
+														value={ category.ID }
+														if product != nil && product.CategoryID != nil && *product.CategoryID == category.ID {
+															selected
+														}
+													>
+														{ category.Name }
+													</option>
+												}
+											</select>
+										</div>
+									</div>
+									
+									<div class="sm:col-span-3">
+										<div class="flex items-center justify-between">
+											<label for="price" class="block text-sm font-medium text-gray-300">
+												Price <span class="text-red-500">*</span>
+											</label>
+											<span class="text-sm text-gray-400">USD</span>
+										</div>
+										<div class="mt-1 relative">
+											<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+												<span class="text-gray-400 sm:text-sm">$</span>
+											</div>
+											<input
+												type="number"
+												id="price"
+												name="price"
+												if product != nil {
+													value={ fmt.Sprintf("%.2f", product.Price) }
+												} else {
+													value="0.00"
+												}
+												step="0.01"
+												min="0"
+												required
+												class="block w-full rounded-md border-0 py-1.5 pl-7 bg-gray-700 text-white shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+											/>
+										</div>
+									</div>
+									
+									<div class="sm:col-span-6">
+										<label for="description" class="block text-sm font-medium text-gray-300">
+											Description
+										</label>
+										<div class="mt-1">
+											<textarea
+												id="description"
+												name="description"
+												rows="4"
+												class="block w-full rounded-md border-0 py-1.5 bg-gray-700 text-white shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+											>
+												if product != nil {
+													{ product.Description }
+												}
+											</textarea>
+										</div>
+										<p class="mt-1 text-xs text-gray-400">Brief description of the product</p>
+									</div>
+								</div>
+							</div>
+							
+							<!-- Inventory Section -->
+							<div>
+								<h2 class="text-lg font-semibold text-indigo-300 mb-4">Inventory</h2>
+								<div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+									<div>
+										<label for="stock_count" class="block text-sm font-medium text-gray-300">
+											Stock Count <span class="text-red-500">*</span>
+										</label>
+										<div class="mt-1">
+											<input
+												type="number"
+												id="stock_count"
+												name="stock_count"
+												if product != nil {
+													value={ strconv.Itoa(product.StockCount) }
+												} else {
+													value="0"
+												}
+												min="0"
+												required
+												class="block w-full rounded-md border-0 py-1.5 bg-gray-700 text-white shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+											/>
+										</div>
+									</div>
+									
+									<div class="flex flex-col justify-end">
+										<div class="flex items-start mt-5">
+											<div class="flex items-center h-5">
+												<input
+													id="is_available"
+													name="is_available"
+													type="checkbox"
+													value="true"
+													if product == nil || product.IsAvailable {
+														checked
+													}
+													class="h-4 w-4 rounded bg-gray-700 border-gray-600 text-indigo-600 focus:ring-indigo-500"
+												/>
+											</div>
+											<div class="ml-3 text-sm">
+												<label for="is_available" class="font-medium text-gray-300">Available for purchase</label>
+												<p class="text-gray-400">This product can be purchased if checked</p>
+											</div>
+										</div>
+										
+										<div class="flex items-start mt-4">
+											<div class="flex items-center h-5">
+												<input
+													id="enable_variants"
+													name="enable_variants"
+													type="checkbox"
+													value="true"
+													if product != nil && product.HasVariants {
+														checked
+													}
+													x-model="variantsEnabled"
+													class="h-4 w-4 rounded bg-gray-700 border-gray-600 text-indigo-600 focus:ring-indigo-500"
+												/>
+											</div>
+											<div class="ml-3 text-sm">
+												<label for="enable_variants" class="font-medium text-gray-300">Enable variants</label>
+												<p class="text-gray-400">Create multiple variants (e.g. sizes, weights)</p>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<!-- Variants Section -->
+							<div x-show="variantsEnabled" class="space-y-4">
+								<div class="flex justify-between items-center">
+									<h2 class="text-lg font-semibold text-indigo-300">Product Variants</h2>
+									<button 
+										type="button"
+										x-on:click="toggleVariantsSection" 
+										class="text-sm text-indigo-400 hover:text-indigo-300 focus:outline-none"
+									>
+										<span x-show="variantsCollapsed">Show section</span>
+										<span x-show="!variantsCollapsed">Hide section</span>
+									</button>
+								</div>
+								
+								<div x-show="!variantsCollapsed" class="space-y-4">
+									<!-- Hidden elements to store existing variants data -->
+									if product != nil && len(product.Variants) > 0 {
+										for _, variant := range product.Variants {
+											<div 
+												class="variant-data hidden" 
+												data-id={ variant.ID } 
+												data-name={ variant.Name } 
+												data-price={ fmt.Sprintf("%.2f", variant.Price) } 
+												data-stock={ strconv.Itoa(variant.StockCount) }
+												data-available={ strconv.FormatBool(variant.IsAvailable) }
+											></div>
+										}
+									}
+									
+									<!-- Show existing variants in edit mode -->
+									if product != nil && len(product.Variants) > 0 {
+										<div class="bg-gray-700 rounded-md p-4">
+											<h4 class="text-sm font-medium text-gray-300 mb-3">Existing Variants</h4>
+											<div class="space-y-2">
+												for _, variant := range product.Variants {
+													<div class="flex items-center justify-between p-3 bg-gray-600 rounded-md">
+														<div class="flex-1">
+															<div class="text-sm font-medium text-gray-200">{ variant.Name }</div>
+															<div class="text-xs text-gray-400">
+																Price: ${ fmt.Sprintf("%.2f", variant.Price) } | Stock: { strconv.Itoa(variant.StockCount) } | 
+																if variant.IsAvailable {
+																	Available
+																} else {
+																	Unavailable
+																}
+															</div>
+														</div>
+														<div class="text-xs text-indigo-400">
+															<a href={ templ.SafeURL("/products/" + product.ID) } class="hover:text-indigo-300">
+																Edit in product view
+															</a>
+														</div>
+													</div>
+												}
+											</div>
+											<div class="mt-3 text-xs text-gray-400">
+												<p>To edit or delete existing variants, go to the product view page.</p>
+											</div>
+										</div>
+									}
+									
+									<!-- Variant creation template buttons -->
+									<div class="bg-gray-700 rounded-md p-4">
+										<h4 class="text-sm font-medium text-gray-300 mb-3">
+											if product != nil && len(product.Variants) > 0 {
+												Add New Variants
+											} else {
+												Quick Add Templates
+											}
+										</h4>
+										<div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+											<button 
+												type="button"
+												class="px-2 py-1.5 text-xs font-medium bg-indigo-900 text-indigo-200 rounded hover:bg-indigo-800"
+												x-on:click="variants = variants.filter(v => v.isExisting); [3, 5, 10].forEach(w => variants.push({name: w + 'g', price: '', stock: '0', isExisting: false})); variantsCollapsed = false;"
+											>
+												Small Weights
+												<div class="text-xs mt-1 text-indigo-400">3g, 5g, 10g</div>
+											</button>
+											
+											<button 
+												type="button"
+												class="px-2 py-1.5 text-xs font-medium bg-indigo-900 text-indigo-200 rounded hover:bg-indigo-800"
+												x-on:click="variants = variants.filter(v => v.isExisting); [5, 15, 25, 35].forEach(w => variants.push({name: w + 'g', price: '', stock: '0', isExisting: false})); variantsCollapsed = false;"
+											>
+												Standard Weights
+												<div class="text-xs mt-1 text-indigo-400">5g, 15g, 25g, 35g</div>
+											</button>
+										</div>
+									</div>
+									
+									<!-- Dynamic variants input fields (only for NEW variants) -->
+									<div>
+										<template x-for="(variant, index) in variants.filter(v => !v.isExisting)" :key="index">
+											<div class="bg-gray-700 rounded-md p-4 mb-4">
+												<div class="flex justify-between items-center mb-3">
+													<h4 class="text-sm font-medium text-gray-200">
+														New Variant #<span x-text="variants.filter(v => !v.isExisting).indexOf(variant) + 1"></span>
+													</h4>
+													<button 
+														type="button" 
+														class="text-red-400 hover:text-red-300"
+														x-on:click="removeVariant(variants.indexOf(variant))"
+													>
+														<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+															<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+														</svg>
+													</button>
+												</div>
+												
+												<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+													<div class="sm:col-span-1">
+														<label class="block text-sm font-medium text-gray-300">Name</label>
+														<input 
+															type="text" 
+															x-model="variant.name"
+															:name="'variants[' + variants.filter(v => !v.isExisting).indexOf(variant) + '][name]'"
+															class="mt-1 block w-full rounded-md border-0 py-1.5 bg-gray-600 text-white shadow-sm ring-1 ring-inset ring-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+															required
+														/>
+													</div>
+													
+													<div class="sm:col-span-1">
+														<label class="block text-sm font-medium text-gray-300">Price</label>
+														<div class="relative mt-1 rounded-md shadow-sm">
+															<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+																<span class="text-gray-400 sm:text-sm">$</span>
+															</div>
+															<input 
+																type="number" 
+																step="0.01" 
+																min="0"
+																x-model="variant.price"
+																:name="'variants[' + variants.filter(v => !v.isExisting).indexOf(variant) + '][price]'"
+																class="block w-full rounded-md border-0 py-1.5 pl-7 bg-gray-600 text-white shadow-sm ring-1 ring-inset ring-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+																required
+															/>
+														</div>
+													</div>
+													
+													<div class="sm:col-span-1">
+														<label class="block text-sm font-medium text-gray-300">Stock</label>
+														<input 
+															type="number" 
+															min="0"
+															x-model="variant.stock"
+															:name="'variants[' + variants.filter(v => !v.isExisting).indexOf(variant) + '][stock]'"
+															class="mt-1 block w-full rounded-md border-0 py-1.5 bg-gray-600 text-white shadow-sm ring-1 ring-inset ring-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+															required
+														/>
+													</div>
+												</div>
+											</div>
+										</template>
+										
+										<div class="flex justify-center mt-4">
+											<button 
+												type="button"
+												class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-indigo-300 border border-indigo-600 hover:bg-indigo-900"
+												x-on:click="addVariant"
+											>
+												<svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+												</svg>
+												Add New Variant
+											</button>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div>
+								<h2 class="text-lg font-semibold text-indigo-300 mb-4">Images</h2>
+								<div>
+									<label for="image_urls" class="block text-sm font-medium text-gray-300">
+										Image URLs
+									</label>
+									<div class="mt-1">
+										<textarea
+											id="image_urls"
+											name="image_urls"
+											rows="4"
+											placeholder="Enter one URL per line"
+											class="block w-full rounded-md border-0 py-1.5 bg-gray-700 text-white shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm"
+										>
+											if product != nil && len(product.ImageURLs) > 0 {
+												for i, url := range product.ImageURLs {
+													if i > 0 {
+														"\n"
+													}
+													{ url }
+												}
+											}
+										</textarea>
+									</div>
+									<p class="mt-1 text-xs text-gray-400">Enter one image URL per line</p>
+								</div>
+							</div>
+							
+							<!-- Submit Section -->
+							<div class="pt-5 border-t border-gray-700">
+								<div class="flex justify-end space-x-3">
+									<a
+										href="/products"
+										class="px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600"
+									>
+										Cancel
+									</a>
+									<button
+										type="submit"
+										class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+									>
+										if isEdit {
+											Update Product
+										} else {
+											Create Product
+										}
+									</button>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<script>
+			// Make HTMX-safe by checking if functions already exist
+			if (typeof window.generateSlug !== 'function') {
+				// Slug generation functionality
+				window.generateSlug = function() {
+					const nameInput = document.getElementById('name');
+					const slugInput = document.getElementById('slug');
+					
+					if (nameInput.value.trim()) {
+						const slug = window.createSlugFromText(nameInput.value);
+						slugInput.value = slug;
+						
+						// Add visual feedback
+						slugInput.classList.add('ring-green-500');
+						setTimeout(() => {
+							slugInput.classList.remove('ring-green-500');
+						}, 1000);
+					}
+				};
+				
+				window.createSlugFromText = function(text) {
+					return text
+						.toLowerCase()
+						.trim()
+						.replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+						.replace(/\s+/g, '-') // Replace spaces with hyphens
+						.replace(/-+/g, '-') // Replace multiple hyphens with single
+						.replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+				};
+			}
+			
+			// Initialize slug functionality for current form
+			function initializeSlugForm() {
+				const nameInput = document.getElementById('name');
+				const slugInput = document.getElementById('slug');
+				const autoSlugCheckbox = document.getElementById('auto-slug');
+				
+				if (!nameInput || !slugInput || !autoSlugCheckbox) return;
+				
+				// Clear any existing timeout
+				if (window.autoSlugTimeout) {
+					clearTimeout(window.autoSlugTimeout);
+				}
+				
+				// Only auto-generate for new products (when slug is empty)
+				const isNewProduct = !slugInput.value.trim();
+				
+				if (isNewProduct) {
+					// Remove any existing event listeners by cloning the element
+					const newNameInput = nameInput.cloneNode(true);
+					nameInput.parentNode.replaceChild(newNameInput, nameInput);
+					
+					newNameInput.addEventListener('input', function() {
+						if (autoSlugCheckbox.checked && this.value.trim()) {
+							clearTimeout(window.autoSlugTimeout);
+							window.autoSlugTimeout = setTimeout(() => {
+								const slug = window.createSlugFromText(this.value);
+								slugInput.value = slug;
+							}, 500); // 500ms delay
+						}
+					});
+				} else {
+					// For existing products, disable auto-generation by default
+					autoSlugCheckbox.checked = false;
+				}
+				
+				// Allow manual toggling of auto-generation
+				autoSlugCheckbox.addEventListener('change', function() {
+					if (!this.checked) {
+						clearTimeout(window.autoSlugTimeout);
+					}
+				});
+				
+				// Prevent auto-generation when user is manually editing slug
+				slugInput.addEventListener('input', function() {
+					autoSlugCheckbox.checked = false;
+				});
+			}
+			
+			// Initialize immediately if DOM is ready, otherwise wait
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', initializeSlugForm);
+			} else {
+				initializeSlugForm();
+			}
+		</script>
+	}
+}
+
+func getProductFormTitle(isEdit bool) string {
+	if isEdit {
+		return "Edit Product"
+	}
+	return "New Product"
+}

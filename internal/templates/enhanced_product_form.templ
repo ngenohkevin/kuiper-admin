@@ -1,0 +1,375 @@
+package templates
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"github.com/ngenohkevin/kuiper_admin/internal/models"
+)
+
+templ EnhancedProductForm(product *models.Product, categories []models.Category, isEdit bool) {
+	@Layout(getProductTitle(isEdit)) {
+		<div class="sm:flex sm:items-center">
+			<div class="sm:flex-auto">
+				<h1 class="text-3xl font-semibold leading-tight text-gray-900 dark:text-gray-100">
+					if isEdit {
+						Edit Product
+					} else {
+						New Product
+					}
+				</h1>
+				<p class="mt-2 text-sm text-gray-700 dark:text-gray-300">
+					if isEdit {
+						Edit your product details
+					} else {
+						Create a new product with optional variants
+					}
+				</p>
+			</div>
+			<div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+				<a
+					href="/products"
+					hx-boost="true"
+					class="block rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-center text-sm font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+				>
+					Cancel
+				</a>
+			</div>
+		</div>
+
+		<div x-data="{
+            variantsEnabled: {{ if product != nil && product.HasVariants }}true{{ else }}false{{ end }},
+            variantsCollapsed: {{ if product != nil && product.HasVariants }}false{{ else }}true{{ end }},
+            variants: [],
+            addVariant() {
+                const weight = (this.variants.length * 5 + 5);
+                this.variants.push({
+                    name: weight + ' grams',
+                    price: '',
+                    stock: ''
+                });
+            },
+            removeVariant(index) {
+                this.variants.splice(index, 1);
+            },
+            applyTemplate(weights) {
+                this.variants = weights.map(weight => ({
+                    name: weight + ' grams',
+                    price: '',
+                    stock: ''
+                }));
+                this.variantsCollapsed = false;
+            },
+            toggleVariantsSection() {
+                this.variantsCollapsed = !this.variantsCollapsed;
+            }
+        }">
+			<form 
+				x-ref="productForm"
+				class="mt-8 max-w-xl"
+				method="POST"
+				action={templ.SafeURL(func() string {
+					if isEdit && product != nil {
+						return "/products/" + product.ID
+					}
+					return "/products/with-variants"
+				}())}
+				@submit.prevent="if (variantsEnabled && variants.length === 0) { 
+					alert('Please add at least one variant or disable variants.');
+					return false;
+				} else {
+					$event.target.submit();
+				}"
+			>
+				<div class="space-y-6">
+					<!-- Basic product details -->
+					<div>
+						<label for="name" class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+							Name <span class="text-red-500">*</span>
+						</label>
+						<div class="mt-2">
+							<input
+								type="text"
+								name="name"
+								id="name"
+								if product != nil {
+									value={ product.Name }
+								}
+								required
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6"
+							/>
+						</div>
+					</div>
+
+					<div>
+						<label for="slug" class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+							Slug <span class="text-red-500">*</span>
+						</label>
+						<div class="mt-2">
+							<input
+								type="text"
+								name="slug"
+								id="slug"
+								if product != nil {
+									value={ product.Slug }
+								}
+								required
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6"
+							/>
+						</div>
+						<p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+							URL-friendly version of the name. Use lowercase letters, numbers, and hyphens.
+						</p>
+					</div>
+
+					<div>
+						<label for="category_id" class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+							Category
+						</label>
+						<div class="mt-2">
+							<select
+								id="category_id"
+								name="category_id"
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6"
+							>
+								<option value="">None</option>
+								for _, c := range categories {
+									<option 
+										value={ c.ID }
+										if product != nil && product.CategoryID != nil && *product.CategoryID == c.ID {
+											selected
+										}
+									>
+										{ c.Name }
+									</option>
+								}
+							</select>
+						</div>
+					</div>
+
+					<div>
+						<label for="description" class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+							Description
+						</label>
+						<div class="mt-2">
+							<textarea
+								id="description"
+								name="description"
+								rows="4"
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6"
+							>
+								if product != nil {
+									{ product.Description }
+								}
+							</textarea>
+						</div>
+					</div>
+
+					<div class="grid grid-cols-2 gap-6">
+						<div>
+							<label for="price" class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+								Price <span class="text-red-500">*</span>
+							</label>
+							<div class="mt-2">
+								<div class="relative rounded-md shadow-sm">
+									<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+										<span class="text-gray-500 dark:text-gray-400 sm:text-sm">$</span>
+									</div>
+									<input
+										type="number"
+										name="price"
+										id="price"
+										if product != nil {
+											value={ fmt.Sprintf("%.2f", product.Price) }
+										} else {
+											value="0.00"
+										}
+										step="0.01"
+										min="0"
+										required
+										class="block w-full rounded-md border-0 py-1.5 pl-7 text-gray-900 dark:text-white bg-white dark:bg-gray-700 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6"
+									/>
+								</div>
+							</div>
+						</div>
+
+						<div>
+							<label for="stock_count" class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+								Stock Count <span class="text-red-500">*</span>
+							</label>
+							<div class="mt-2">
+								<input
+									type="number"
+									name="stock_count"
+									id="stock_count"
+									if product != nil {
+										value={ strconv.Itoa(product.StockCount) }
+									} else {
+										value="0"
+									}
+									min="0"
+									required
+									class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6"
+								/>
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<label for="image_urls" class="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+							Image URLs (one per line)
+						</label>
+						<div class="mt-2">
+							<textarea
+								id="image_urls"
+								name="image_urls"
+								rows="3"
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6"
+								placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
+							>
+								if product != nil && len(product.ImageURLs) > 0 {
+									{ strings.Join(product.ImageURLs, "\n") }
+								}
+							</textarea>
+						</div>
+						<p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+							Enter one URL per line for each product image.
+						</p>
+					</div>
+
+					<div class="flex items-center">
+						<input
+							id="is_available"
+							name="is_available"
+							type="checkbox"
+							if product == nil || product.IsAvailable {
+								checked
+							}
+							value="true"
+							class="h-4 w-4 rounded border-gray-300 dark:border-gray-700 text-purple-600 focus:ring-purple-600 dark:bg-gray-700"
+						/>
+						<label for="is_available" class="ml-2 block text-sm text-gray-900 dark:text-gray-100">
+							Product is available for purchase
+						</label>
+					</div>
+
+					<!-- Variants section -->
+					if !isEdit {
+						<div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+							<div class="flex items-start">
+								<div class="flex h-6 items-center">
+									<input 
+										id="enable_variants" 
+										name="enable_variants" 
+										type="checkbox"
+										x-model="variantsEnabled"
+										@change="if(variantsEnabled && variants.length === 0) { addVariant(); variantsCollapsed = false; }"
+										class="h-4 w-4 rounded border-gray-300 dark:border-gray-700 text-purple-600 focus:ring-purple-600 dark:bg-gray-700"
+									/>
+								</div>
+								<div class="ml-3">
+									<label for="enable_variants" class="font-medium text-gray-900 dark:text-gray-100">Add Weight Variants</label>
+									<p class="text-gray-500 dark:text-gray-400 text-sm">Enable to add multiple weight-based variants to this product</p>
+								</div>
+							</div>
+						</div>
+
+						<div x-show="variantsEnabled" class="space-y-6">
+							<div class="flex justify-between items-center">
+								<h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Product Variants</h3>
+								<button 
+									type="button" 
+									x-on:click="toggleVariantsSection"
+									class="text-sm text-blue-600 dark:text-blue-400"
+								>
+									<span x-show="variantsCollapsed">Show section</span>
+									<span x-show="!variantsCollapsed">Hide section</span>
+								</button>
+							</div>
+							
+							<div x-show="!variantsCollapsed">
+								<div class="border p-4 rounded-md bg-gray-50 dark:bg-gray-800">
+									<h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Weight Templates</h3>
+									<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+										<button type="button" class="px-3 py-2 bg-blue-100 dark:bg-blue-900 rounded-md text-blue-800 dark:text-blue-200"
+											x-on:click.prevent="applyTemplate([5, 15, 30])">
+											Small Weights (5g, 15g, 30g)
+										</button>
+										<button type="button" class="px-3 py-2 bg-blue-100 dark:bg-blue-900 rounded-md text-blue-800 dark:text-blue-200"
+											x-on:click.prevent="applyTemplate([5, 15, 25, 35])">
+											Standard Weights (5g, 15g, 25g, 35g)
+										</button>
+										<button type="button" class="px-3 py-2 bg-blue-100 dark:bg-blue-900 rounded-md text-blue-800 dark:text-blue-200"
+											x-on:click.prevent="applyTemplate([10, 20, 30, 40, 50])">
+											10g Increments
+										</button>
+										<button type="button" class="px-3 py-2 bg-blue-100 dark:bg-blue-900 rounded-md text-blue-800 dark:text-blue-200"
+											x-on:click.prevent="applyTemplate([25, 50, 75, 100])">
+											25g Increments
+										</button>
+									</div>
+								</div>
+
+								<div class="space-y-4 mt-4">
+									<template x-for="(variant, index) in variants" :key="index">
+										<div class="border p-4 rounded-md bg-white dark:bg-gray-800">
+											<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+												<div>
+													<label class="block text-sm font-medium text-gray-900 dark:text-gray-100">Name</label>
+													<input type="text" x-bind:name="'variants[' + index + '][name]'" x-model="variant.name"
+														class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6" />
+												</div>
+												<div>
+													<label class="block text-sm font-medium text-gray-900 dark:text-gray-100">Price ($)</label>
+													<input type="number" step="0.01" min="0" x-bind:name="'variants[' + index + '][price]'" x-model="variant.price"
+														class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6" />
+												</div>
+												<div>
+													<label class="block text-sm font-medium text-gray-900 dark:text-gray-100">Stock</label>
+													<input type="number" min="0" x-bind:name="'variants[' + index + '][stock]'" x-model="variant.stock"
+														class="mt-1 block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white bg-white dark:bg-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-purple-600 dark:focus:ring-purple-500 sm:text-sm sm:leading-6" />
+												</div>
+											</div>
+											<div class="mt-2">
+												<button type="button" x-on:click.prevent="removeVariant(index)"
+													class="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
+													Remove
+												</button>
+											</div>
+										</div>
+									</template>
+									
+									<div x-show="variants.length === 0" class="text-center py-4 bg-gray-50 dark:bg-gray-800 rounded-md">
+										<p class="text-gray-500 dark:text-gray-400">No variants added yet. Add a variant or select a template.</p>
+									</div>
+									
+									<div>
+										<button type="button" x-on:click.prevent="addVariant()"
+											class="text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md px-3 py-2 text-gray-800 dark:text-gray-200">
+											+ Add Variant
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					}
+
+					<div class="pt-5">
+						<div class="flex justify-end">
+							<button
+								type="submit"
+								class="rounded-md bg-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
+							>
+								if isEdit {
+									Update Product
+								} else {
+									Create Product
+								}
+							</button>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	}
+}
