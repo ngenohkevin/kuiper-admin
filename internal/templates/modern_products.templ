@@ -39,14 +39,14 @@ templ ModernProductList(products []models.Product) {
 				<!-- Search Section -->
 				<div class="mb-6">
 					<div class="relative rounded-lg shadow-sm max-w-full sm:max-w-lg">
-						<input 
-							type="text" 
-							placeholder="Search products..." 
+						<input
+							type="text"
+							placeholder="Search products..."
 							class="block w-full p-4 text-base bg-gray-800 border border-gray-700 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
 							hx-get="/products"
 							hx-trigger="keyup changed delay:500ms"
 							hx-target="#products-container"
-							hx-select="#products-container"
+							hx-swap="innerHTML"
 							name="q"
 						/>
 						<div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
@@ -1045,8 +1045,8 @@ templ ModernProductView(product models.Product) {
 				<div class="p-4">
 					<form
 						hx-post={ "/products/" + product.ID + "/variants" }
-						hx-target="body"
-						hx-swap="outerHTML"
+						hx-on::after-request="if(event.detail.successful) window.location.reload()"
+						
 						class="space-y-4"
 					>
 						<div>
@@ -1133,8 +1133,8 @@ templ ModernProductView(product models.Product) {
 								class="px-3 py-2 text-xs font-medium bg-indigo-900 text-indigo-200 rounded hover:bg-indigo-800"
 								hx-post={ "/products/" + product.ID + "/bulk-variants" }
 								hx-vals='{"template": "standard", "weights": "5,15,25,35"}'
-								hx-target="body"
-								hx-swap="outerHTML"
+								hx-on::after-request="if(event.detail.successful) window.location.reload()"
+								
 							>
 								Standard Weights
 								<div class="text-xs mt-1 text-indigo-400">5g, 15g, 25g, 35g</div>
@@ -1144,8 +1144,8 @@ templ ModernProductView(product models.Product) {
 								class="px-3 py-2 text-xs font-medium bg-indigo-900 text-indigo-200 rounded hover:bg-indigo-800"
 								hx-post={ "/products/" + product.ID + "/bulk-variants" }
 								hx-vals='{"template": "small", "weights": "3,5,10"}'
-								hx-target="body"
-								hx-swap="outerHTML"
+								hx-on::after-request="if(event.detail.successful) window.location.reload()"
+								
 							>
 								Small Weights
 								<div class="text-xs mt-1 text-indigo-400">3g, 5g, 10g</div>
