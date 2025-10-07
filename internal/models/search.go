@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/ngenohkevin/kuiper_admin/internal/database"
 )
 
@@ -77,18 +78,32 @@ func SearchProducts(db *database.DB, query string) ([]Product, error) {
 	var products []Product
 	for rows.Next() {
 		var p Product
-		var c Category
+		// Use nullable types for category fields to handle LEFT JOIN NULLs
+		var catID, catName, catSlug, catParentID *string
+		var catCreatedAt *time.Time
 
 		if err := rows.Scan(
 			&p.ID, &p.CategoryID, &p.Name, &p.Slug, &p.Description,
 			&p.Price, &p.ImageURLs, &p.StockCount, &p.IsAvailable, &p.HasVariants,
 			&p.CreatedAt, &p.UpdatedAt,
-			&c.ID, &c.Name, &c.Slug, &c.ParentID, &c.CreatedAt,
+			&catID, &catName, &catSlug, &catParentID, &catCreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("error scanning product row: %w", err)
 		}
 
-		if c.ID != "" {
+		// Only create Category if we have valid category data
+		if catID != nil && *catID != "" {
+			c := Category{
+				ID:   *catID,
+				Name: *catName,
+				Slug: *catSlug,
+			}
+			if catParentID != nil {
+				c.ParentID = catParentID
+			}
+			if catCreatedAt != nil {
+				c.CreatedAt = pgtype.Timestamp{Time: *catCreatedAt, Valid: true}
+			}
 			p.Category = &c
 		}
 
