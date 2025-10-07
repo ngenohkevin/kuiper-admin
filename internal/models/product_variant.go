@@ -188,11 +188,16 @@ func CreateProductVariant(db *database.DB, productID, name string,
 		return ProductVariant{}, fmt.Errorf("error marshaling variants to JSON: %w", err)
 	}
 
+	// Log the JSON for debugging
+	log.Printf("Updating product %s with variants JSON: %s", productID, string(updatedVariantsJSON))
+
 	// Update the product with the new variants array and ensure has_variants is true
+	// Cast to jsonb explicitly to ensure proper type handling
 	_, err = db.Pool.Exec(ctx,
-		"UPDATE products SET variants = $1, has_variants = true, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
-		updatedVariantsJSON, productID)
+		"UPDATE products SET variants = $1::jsonb, has_variants = true, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+		string(updatedVariantsJSON), productID)
 	if err != nil {
+		log.Printf("Error updating variants for product %s: %v, JSON: %s", productID, err, string(updatedVariantsJSON))
 		return ProductVariant{}, fmt.Errorf("error updating product variants: %w", err)
 	}
 
@@ -265,11 +270,15 @@ func UpdateProductVariant(db *database.DB, id, name string,
 		return ProductVariant{}, fmt.Errorf("error marshaling variants to JSON: %w", err)
 	}
 
+	log.Printf("Updating variant %s in product %s with JSON: %s", id, productID, string(updatedVariantsJSON))
+
 	// Update the product with the modified variants array
+	// Cast to jsonb explicitly to ensure proper type handling
 	_, err = db.Pool.Exec(ctx,
-		"UPDATE products SET variants = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
-		updatedVariantsJSON, productID)
+		"UPDATE products SET variants = $1::jsonb, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+		string(updatedVariantsJSON), productID)
 	if err != nil {
+		log.Printf("Error updating variant %s: %v, JSON: %s", id, err, string(updatedVariantsJSON))
 		return ProductVariant{}, fmt.Errorf("error updating product variants: %w", err)
 	}
 
@@ -327,14 +336,17 @@ func DeleteProductVariant(db *database.DB, id string) error {
 		return fmt.Errorf("error marshaling variants to JSON: %w", err)
 	}
 
+	log.Printf("Deleting variant %s from product %s, new JSON: %s", id, productID, string(newVariantsJSON))
+
 	// Update the product with the new variants array
 	// Also update has_variants flag if there are no more variants
+	// Cast to jsonb explicitly to ensure proper type handling
 	hasVariants := len(newVariants) > 0
 	_, err = db.Pool.Exec(ctx,
-		"UPDATE products SET variants = $1, has_variants = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3",
-		newVariantsJSON, hasVariants, productID)
+		"UPDATE products SET variants = $1::jsonb, has_variants = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3",
+		string(newVariantsJSON), hasVariants, productID)
 	if err != nil {
-		log.Printf("Error updating product variants: %v", err)
+		log.Printf("Error updating product variants after delete: %v, JSON: %s", err, string(newVariantsJSON))
 		return fmt.Errorf("error updating product variants: %w", err)
 	}
 
@@ -432,8 +444,8 @@ func UpdateProductVariantWithProductID(db *database.DB, id, newProductID, name s
 
 	hasVariants := len(remainingVariants) > 0
 	_, err = tx.Exec(ctx,
-		"UPDATE products SET variants = $1, has_variants = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3",
-		currentVariantsJSON, hasVariants, currentProductID)
+		"UPDATE products SET variants = $1::jsonb, has_variants = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3",
+		string(currentVariantsJSON), hasVariants, currentProductID)
 	if err != nil {
 		return ProductVariant{}, fmt.Errorf("error updating current product variants: %w", err)
 	}
@@ -462,8 +474,8 @@ func UpdateProductVariantWithProductID(db *database.DB, id, newProductID, name s
 
 	// Step 3: Update the new product's variants
 	_, err = tx.Exec(ctx,
-		"UPDATE products SET variants = $1, has_variants = true, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
-		updatedNewVariantsJSON, newProductID)
+		"UPDATE products SET variants = $1::jsonb, has_variants = true, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+		string(updatedNewVariantsJSON), newProductID)
 	if err != nil {
 		return ProductVariant{}, fmt.Errorf("error updating new product variants: %w", err)
 	}

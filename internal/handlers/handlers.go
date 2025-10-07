@@ -447,6 +447,11 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	product, err := models.CreateProduct(h.DB, categoryIDPtr, name, slug, description, price, imageURLs, stockCount, isAvailable, hasVariants)
 	if err != nil {
 		log.Printf("Error creating product: %v", err)
+		// Check for duplicate slug error
+		if strings.Contains(err.Error(), "products_slug_key") {
+			http.Error(w, fmt.Sprintf("A product with slug '%s' already exists. Please use a different slug.", slug), http.StatusConflict)
+			return
+		}
 		http.Error(w, fmt.Sprintf("Error creating product: %v", err), http.StatusInternalServerError)
 		return
 	}
