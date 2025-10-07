@@ -37,8 +37,6 @@ COPY --from=builder /app/web ./web
 # Copy the migrations directory
 COPY --from=builder /app/migrations ./migrations
 
-# Copy .env file
-COPY --from=builder /app/.env .
 
 # Expose port
 EXPOSE 8090
